@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gumi Coffee - Kasir</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <!-- Konfigurasi PWA (Progressive Web App) -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#8b5cf6">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Gumi Kasir">
+    
+    <!-- Referensi Logo -->
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    
+    <style>
+        :root {
+            --primary-blue: #3b82f6;
+            --primary-purple: #8b5cf6;
+            --bg-light: #f8fafc;
+            --text-dark: #1e293b;
+        }
+
+        /* Padding global agar tidak menabrak header/footer */
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            margin: 0;
+            padding-top: 95px;  /* Jarak untuk header */
+            padding-bottom: 95px; /* Jarak untuk navigasi bawah */
+        }
+
+        .header-gradient {
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-purple));
+            color: white;
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1020;
+        }
+
+        /* Area per seksi (Section) */
+        .page-section {
+            padding-top: 15px;
+            padding-bottom: 25px;
+            margin-bottom: 15px;
+            border-bottom: 2px dashed rgba(0, 0, 0, 0.08);
+            scroll-margin-top: 100px; /* Offset scroll agar pas di bawah header */
+        }
+        
+        .page-section:last-child {
+            border-bottom: none;
+        }
+
+        .menu-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+        
+        .menu-card:active {
+            transform: scale(0.98);
+        }
+
+        .menu-icon-placeholder {
+            height: 100px;
+            background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.1));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: var(--primary-purple);
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+        }
+
+        .btn-tambah {
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-purple));
+            color: white;
+            border: none;
+            border-radius: 8px;
+        }
+        
+        .btn-tambah:hover {
+            color: white;
+            opacity: 0.9;
+        }
+
+        /* Tombol Install PWA */
+        .btn-install-pwa {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            padding: 6px 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn-install-pwa:active {
+            transform: scale(0.95);
+        }
+
+        /* Navigasi Bawah Sticky */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.08);
+            z-index: 1000;
+            border-top-left-radius: 25px;
+            border-top-right-radius: 25px;
+            padding-bottom: env(safe-area-inset-bottom, 12px); /* Support iPhone notch */
+        }
+
+        .nav-item {
+            text-align: center;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: color 0.2s ease, transform 0.1s ease;
+            flex: 1;
+            user-select: none;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            color: var(--primary-purple);
+        }
+        
+        .nav-item:active {
+            transform: scale(0.95);
+        }
+
+        .nav-item i {
+            font-size: 1.3rem;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .nav-item span {
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: block;
+        }
+
+        .badge-harga {
+            background-color: rgba(139, 92, 246, 0.1);
+            color: var(--primary-purple);
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Sticky -->
+    <div class="header-gradient p-3 pt-4 text-center fixed-top">
+        <h4 class="fw-bold mb-0">Gumi Coffee</h4>
+        <small class="opacity-75">Sistem Kasir Pintar</small>
+    </div>
+
+    <!-- Container Utama -->
+    <div class="container">
+        
+        <!-- SECTION 1: HOME -->
+        <div id="home" class="page-section pt-0">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">Dashboard Hari Ini</h5>
+                <button id="btn-install" class="btn btn-install-pwa">
+                    <i class="fas fa-download me-1"></i> Instal App
+                </button>
+            </div>
+            
+            <div class="row g-3 mb-4">
+                <div class="col-6">
+                    <div class="card bg-white border-0 shadow-sm rounded-4 text-center p-3 h-100">
+                        <i class="fas fa-wallet fa-2x mb-2 text-primary"></i>
+                        <h6 class="mb-1">Pendapatan</h6>
+                        <small class="text-muted fw-bold" id="dashboard-pendapatan">Rp 0</small>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card bg-white border-0 shadow-sm rounded-4 text-center p-3 h-100">
+                        <i class="fas fa-receipt fa-2x mb-2 text-success"></i>
+                        <h6 class="mb-1">Transaksi</h6>
+                        <small class="text-muted fw-bold" id="dashboard-transaksi">0 Trx</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3"><i class="fas fa-chart-line text-purple me-2"></i>Grafik Penjualan</h6>
+                    <div style="position: relative; height:200px; width:100%">
+                        <canvas id="chartPenjualan"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: MENU -->
+        <div id="menu" class="page-section">
+            <h5 class="fw-bold mb-3">Daftar Menu (Serba 10K)</h5>
+            <div class="row g-3" id="container-menu"></div>
+        </div>
+
+        <!-- SECTION 3: PESANAN -->
+        <div id="pesanan" class="page-section">
+            <h5 class="fw-bold mb-3">Pesanan Saat Ini</h5>
+            
+            <div class="card border-0 shadow-sm rounded-4 mb-3" style="max-height: 250px; overflow-y: auto;">
+                <div class="card-body" id="list-pesanan">
+                    <p class="text-center text-muted my-3">Belum ada pesanan.</p>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4 bg-light mb-3">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold">Total:</h6>
+                    <h5 class="mb-0 fw-bold text-primary" id="total-harga">Rp 0</h5>
+                </div>
+            </div>
+            
+            <button class="btn btn-tambah w-100 py-3 fw-bold shadow" onclick="prosesPesanan()" id="btn-proses">
+                Proses Pembayaran
+            </button>
+        </div>
+
+        <!-- SECTION 4: RIWAYAT -->
+        <div id="riwayat" class="page-section">
+            <h5 class="fw-bold mb-3">Riwayat Hari Ini</h5>
+            <div class="card border-0 shadow-sm rounded-4" style="max-height: 300px; overflow-y: auto;">
+                <div class="card-body p-0" id="list-riwayat">
+                    <p class="text-center text-muted my-4">Memuat data transaksi...</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Navigasi Bawah Mulus -->
+    <div class="bottom-nav">
+        <div class="nav-item active" id="nav-home" onclick="gulirKeSection('home')">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </div>
+        <div class="nav-item" id="nav-menu" onclick="gulirKeSection('menu')">
+            <i class="fas fa-th-large"></i>
+            <span>Menu</span>
+        </div>
+        <div class="nav-item" id="nav-pesanan" onclick="gulirKeSection('pesanan')">
+            <i class="fas fa-clipboard-list"></i>
+            <span>Pesanan</span>
+        </div>
+        <div class="nav-item" id="nav-riwayat" onclick="gulirKeSection('riwayat')">
+            <i class="fas fa-history"></i>
+            <span>Riwayat</span>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Registrasi Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => console.log('ServiceWorker sukses:', registration.scope))
+                    .catch(error => console.log('ServiceWorker gagal:', error));
+            });
+        }
+    </script>
+
+    <!-- Data Objek Daftar Menu -->
+    <script>
+        const daftarMenu = [
+            { id: "menu1", nama: "Es Kopi Aren", harga: 10000, ikon: "fas fa-mug-hot" },
+            { id: "menu2", nama: "Es Kopi Coklat", harga: 10000, ikon: "fas fa-coffee" },
+            { id: "menu3", nama: "Vanilla Ice", harga: 10000, ikon: "fas fa-ice-cream" }
+        ];
+
+        function tampilkanMenuKeLayar() {
+            const container = document.getElementById('container-menu');
+            let html = '';
+            
+            daftarMenu.forEach(menu => {
+                html += `
+                <div class="col-6 col-md-4">
+                    <div class="card menu-card h-100">
+                        <div class="menu-icon-placeholder"><i class="${menu.ikon}"></i></div>
+                        <div class="card-body p-2 text-center">
+                            <h6 class="card-title fw-bold mb-1">${menu.nama}</h6>
+                            <p class="text-primary mb-2 fw-semibold">Rp ${menu.harga.toLocaleString('id-ID')}</p>
+                            <button class="btn btn-tambah btn-sm w-100" onclick="tambahPesanan('${menu.nama}', ${menu.harga})">+ Tambah</button>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        tampilkanMenuKeLayar();
+    </script>
+
+    <!-- Logika Instalasi PWA -->
+    <script>
+        let installPromptEvent = null;
+        const tombolInstall = document.getElementById('btn-install');
+
+        // Menangkap event instalasi bawaan Android/Desktop (Chrome/Edge)
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            installPromptEvent = e;
+        });
+
+        // Deteksi jika sudah terinstal di standalone mode (PWA)
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            tombolInstall.style.display = 'none';
+        }
+
+        tombolInstall.addEventListener('click', async () => {
+            if (!installPromptEvent) {
+                // Tampilkan pesan bantuan (Penting untuk pengguna Safari/iOS atau browser tanpa dukungan prompt otomatis)
+                alert("Sistem mendeteksi instalasi otomatis belum tersedia.\n\n📱 Panduan Instalasi Manual:\n- Safari (iPhone/iPad): Ketuk ikon 'Share' (Bagikan) di bawah layar, lalu pilih 'Add to Home Screen' (Tambah ke Layar Utama).\n- Chrome (Android/PC): Ketuk menu titik tiga di pojok kanan atas, lalu pilih 'Install App' atau 'Add to Home Screen'.");
+                return;
+            }
+            
+            // Panggil prompt instalasi sistem
+            installPromptEvent.prompt();
+            const { outcome } = await installPromptEvent.userChoice;
+            console.log(`Pilihan user: ${outcome}`);
+            
+            // Hapus event karena hanya bisa dipakai 1 kali
+            installPromptEvent = null;
+        });
+
+        window.addEventListener('appinstalled', () => {
+            console.log('Aplikasi Gumi Coffee sukses diinstal.');
+            tombolInstall.style.display = 'none';
+        });
+    </script>
+
+    <!-- Integrasi Firebase & Chart.js -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAU2rZ8NoI4lHvMmDmJto9FXsNmbPkuCXs",
+            authDomain: "gumi-coffee.firebaseapp.com",
+            projectId: "gumi-coffee",
+            storageBucket: "gumi-coffee.firebasestorage.app",
+            messagingSenderId: "161007871661",
+            appId: "1:161007871661:web:bfc2573149881b7c994824"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Chart.js Setup
+        const ctx = document.getElementById('chartPenjualan').getContext('2d');
+        const grafikPenjualan = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00'],
+                datasets: [{
+                    label: 'Pendapatan (Rp)',
+                    data: [0, 0, 0, 0, 0, 0, 0, 0],
+                    borderColor: '#8b5cf6',
+                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+        
+        window.simpanKeFirebase = async function(dataPesanan, total) {
+            try {
+                await addDoc(collection(db, "transaksi"), {
+                    item: dataPesanan,
+                    total: total,
+                    waktu: new Date()
+                });
+                return true;
+            } catch (e) {
+                console.error("Error: ", e);
+                return false;
+            }
+        };
+
+        const awalHariIni = new Date(); awalHariIni.setHours(0, 0, 0, 0);
+        const akhirHariIni = new Date(); akhirHariIni.setHours(23, 59, 59, 999);
+
+        const q = query(
+            collection(db, "transaksi"), 
+            where("waktu", ">=", awalHariIni),
+            where("waktu", "<=", akhirHariIni),
+            orderBy("waktu", "desc")
+        );
+
+        onSnapshot(q, (querySnapshot) => {
+            const listRiwayat = document.getElementById('list-riwayat');
+            const teksPendapatan = document.getElementById('dashboard-pendapatan');
+            const teksTransaksi = document.getElementById('dashboard-transaksi');
+            
+            let totalPendapatanFirebase = 0;
+            let totalTransaksiFirebase = 0;
+            let dataJam = { '08': 0, '10': 0, '12': 0, '14': 0, '16': 0, '18': 0, '20': 0, '22': 0 };
+
+            if (querySnapshot.empty) {
+                listRiwayat.innerHTML = '<p class="text-center text-muted my-4">Belum ada transaksi hari ini.</p>';
+                teksPendapatan.innerText = 'Rp 0';
+                teksTransaksi.innerText = '0 Trx';
+                grafikPenjualan.data.datasets[0].data = [0, 0, 0, 0, 0, 0, 0, 0];
+                grafikPenjualan.update();
+                return;
+            }
+
+            let html = '<div class="list-group list-group-flush">';
+            
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                totalPendapatanFirebase += data.total;
+                totalTransaksiFirebase += 1;
+
+                let waktuStr = "-";
+                if(data.waktu) {
+                    const t = data.waktu.toDate ? data.waktu.toDate() : new Date(data.waktu);
+                    waktuStr = t.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                    
+                    let jam = t.getHours();
+                    if (jam <= 9) dataJam['08'] += data.total;
+                    else if (jam <= 11) dataJam['10'] += data.total;
+                    else if (jam <= 13) dataJam['12'] += data.total;
+                    else if (jam <= 15) dataJam['14'] += data.total;
+                    else if (jam <= 17) dataJam['16'] += data.total;
+                    else if (jam <= 19) dataJam['18'] += data.total;
+                    else if (jam <= 21) dataJam['20'] += data.total;
+                    else dataJam['22'] += data.total;
+                }
+                const ringkasanItem = data.item.map(i => i.nama).join(', ');
+
+                html += `
+                <div class="list-group-item p-3 border-0 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div style="max-width: 70%;">
+                            <h6 class="fw-bold mb-1 text-dark" style="font-size: 0.9rem;">ID: ${doc.id.substring(0, 6).toUpperCase()}...</h6>
+                            <small class="text-muted d-block text-truncate">${ringkasanItem}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge-harga d-block mb-1" style="font-size: 0.85rem;">Rp ${data.total.toLocaleString('id-ID')}</span>
+                            <small class="text-muted" style="font-size: 0.75rem;"><i class="far fa-clock me-1"></i>${waktuStr}</small>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            html += '</div>';
+            
+            listRiwayat.innerHTML = html;
+            teksPendapatan.innerText = 'Rp ' + totalPendapatanFirebase.toLocaleString('id-ID');
+            teksTransaksi.innerText = totalTransaksiFirebase + ' Trx';
+
+            grafikPenjualan.data.datasets[0].data = [
+                dataJam['08'], dataJam['10'], dataJam['12'], dataJam['14'], 
+                dataJam['16'], dataJam['18'], dataJam['20'], dataJam['22']
+            ];
+            grafikPenjualan.update();
+        });
+    </script>
+
+    <!-- Navigasi & Keranjang JS -->
+    <script>
+        let keranjang = [];
+        let totalBiaya = 0;
+
+        function gulirKeSection(sectionId) {
+            const target = document.getElementById(sectionId);
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                document.getElementById('nav-' + sectionId).classList.add('active');
+            }
+        }
+
+        function tambahPesanan(namaMenu, harga) {
+            keranjang.push({ nama: namaMenu, harga: harga });
+            totalBiaya += harga;
+            updateUIKeranjang();
+        }
+
+        function updateUIKeranjang() {
+            const listPesanan = document.getElementById('list-pesanan');
+            const teksTotal = document.getElementById('total-harga');
+            
+            if (keranjang.length === 0) {
+                listPesanan.innerHTML = '<p class="text-center text-muted my-3">Belum ada pesanan.</p>';
+                teksTotal.innerText = 'Rp 0';
+                return;
+            }
+
+            let html = '';
+            keranjang.forEach((item, index) => {
+                html += `
+                <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
+                    <div><span class="fw-semibold">${item.nama}</span></div>
+                    <div class="text-end">
+                        <span class="text-primary fw-bold">Rp ${item.harga.toLocaleString('id-ID')}</span>
+                        <i class="fas fa-times-circle text-danger ms-2" style="cursor:pointer;" onclick="hapusPesanan(${index})"></i>
+                    </div>
+                </div>`;
+            });
+            
+            listPesanan.innerHTML = html;
+            teksTotal.innerText = 'Rp ' + totalBiaya.toLocaleString('id-ID');
+        }
+
+        function hapusPesanan(index) {
+            totalBiaya -= keranjang[index].harga;
+            keranjang.splice(index, 1);
+            updateUIKeranjang();
+        }
+
+        async function prosesPesanan() {
+            if (keranjang.length === 0) {
+                alert("Pesanan masih kosong!");
+                return;
+            }
+
+            const btnProses = document.getElementById('btn-proses');
+            btnProses.innerText = "Memproses...";
+            btnProses.disabled = true;
+            
+            let sukses = false;
+            if(window.simpanKeFirebase) {
+                sukses = await window.simpanKeFirebase(keranjang, totalBiaya);
+            }
+            
+            if (sukses) {
+                alert("Pesanan berhasil diproses!");
+                keranjang = [];
+                totalBiaya = 0;
+                updateUIKeranjang();
+                gulirKeSection('home');
+            } else {
+                alert("Sistem Firebase belum siap atau gagal terhubung.");
+            }
+
+            btnProses.innerText = "Proses Pembayaran";
+            btnProses.disabled = false;
+        }
+    </script>
+</body>
+</html>
