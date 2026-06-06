@@ -162,6 +162,7 @@
         .modal-content {
             border-radius: 15px;
             border: none;
+            overflow: hidden;
         }
         .modal-header {
             background: linear-gradient(135deg, var(--primary-blue), var(--primary-purple));
@@ -261,7 +262,7 @@
             </div>
             
             <button class="btn btn-outline-primary w-100 py-2 fw-bold rounded-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalLaporan" onclick="window.muatLaporan('init')">
-                <i class="fas fa-calendar-alt me-2"></i>Lihat Laporan 30 Hari Terakhir
+                <i class="fas fa-calendar-alt me-2"></i>Lihat Laporan Penjualan
             </button>
         </div>
 
@@ -271,13 +272,20 @@
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content shadow">
                 <div class="modal-header border-0">
-                    <h1 class="modal-title fs-6 fw-bold" id="modalLaporanLabel"><i class="fas fa-history me-2"></i>Riwayat 30 Hari (Pagination)</h1>
+                    <h1 class="modal-title fs-6 fw-bold" id="modalLaporanLabel"><i class="fas fa-history me-2"></i>Laporan Penjualan</h1>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
+                
+                <div class="bg-white p-3 border-bottom shadow-sm z-1">
+                    <label for="filter-tanggal" class="form-label fw-bold text-muted" style="font-size: 0.8rem;">Filter Berdasarkan Hari:</label>
+                    <select id="filter-tanggal" class="form-select form-select-sm fw-semibold" onchange="window.muatLaporan('init')">
+                        </select>
+                </div>
+
                 <div class="modal-body bg-light p-0">
                     <div id="loading-laporan" class="text-center my-4 d-none">
                         <div class="spinner-border text-primary" role="status"></div>
-                        <p class="text-muted mt-2" style="font-size: 0.85rem;">Memuat data memori rendah...</p>
+                        <p class="text-muted mt-2" style="font-size: 0.85rem;">Memuat data penjualan...</p>
                     </div>
                     <div id="list-laporan" class="list-group list-group-flush">
                         </div>
@@ -365,11 +373,36 @@
             installPromptEvent = null;
         });
         window.addEventListener('appinstalled', () => tombolInstall.style.display = 'none');
+        
+        // Generate Opsi Dropdown 30 Hari Terakhir
+        function siapkanDropdownTanggal() {
+            const select = document.getElementById('filter-tanggal');
+            let opsiHtml = '<option value="all">Semua (Gabungan 30 Hari Terakhir)</option>';
+            
+            for (let i = 0; i < 30; i++) {
+                let d = new Date();
+                d.setDate(d.getDate() - i);
+                
+                // Format Value (YYYY-MM-DD)
+                let yyyy = d.getFullYear();
+                let mm = String(d.getMonth() + 1).padStart(2, '0');
+                let dd = String(d.getDate()).padStart(2, '0');
+                let valueTanggal = `${yyyy}-${mm}-${dd}`;
+                
+                // Format Label Visual
+                let labelTanggal = d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+                if (i === 0) labelTanggal = "Hari Ini (" + labelTanggal + ")";
+                else if (i === 1) labelTanggal = "Kemarin (" + labelTanggal + ")";
+                
+                opsiHtml += `<option value="${valueTanggal}">${labelTanggal}</option>`;
+            }
+            select.innerHTML = opsiHtml;
+        }
+        siapkanDropdownTanggal();
     </script>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        // Tambahan import `getDocs`, `limit`, `startAfter`, `startAt` untuk Pagination
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, where, getDocs, limit, startAfter, startAt } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -384,7 +417,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // -- Setup Chart (Tetap Sama) --
+        // -- Setup Chart --
         const ctxPenjualan = document.getElementById('chartPenjualan').getContext('2d');
         const grafikPenjualan = new Chart(ctxPenjualan, {
             type: 'line',
@@ -483,11 +516,11 @@
             grafikMenu.update();
         });
 
-        // --- FITUR BARU: LOGIKA PAGINATION LAPORAN 30 HARI ---
+        // --- LOGIKA FILTER TANGGAL & PAGINATION LAPORAN ---
         let currentPage = 0;
-        let pageCursors = []; // Menyimpan dokumen pertama dari setiap halaman
+        let pageCursors = [];
         let currentQuerySnapshot = null;
-        const itemPerPage = 10; // Jumlah item per halaman memori ringan
+        const itemPerPage = 10; 
 
         window.muatLaporan = async function(action) {
             const listLaporan = document.getElementById('list-laporan');
@@ -495,51 +528,58 @@
             const btnPrev = document.getElementById('btn-laporan-prev');
             const btnNext = document.getElementById('btn-laporan-next');
             const pageInfo = document.getElementById('laporan-page-info');
+            const opsiTanggal = document.getElementById('filter-tanggal').value;
 
-            // Set visual loading state
             loading.classList.remove('d-none');
             btnPrev.disabled = true;
             btnNext.disabled = true;
             if(action === 'init') { listLaporan.innerHTML = ''; } 
             else { listLaporan.style.opacity = '0.5'; }
 
-            // Set Batas Tarik Data (30 Hari Terakhir)
-            const batas30Hari = new Date();
-            batas30Hari.setDate(batas30Hari.getDate() - 30);
-            batas30Hari.setHours(0,0,0,0);
+            // Penentuan Rentang Waktu Pencarian
+            let dateStart, dateEnd;
+            if (opsiTanggal === 'all') {
+                dateStart = new Date();
+                dateStart.setDate(dateStart.getDate() - 30);
+                dateStart.setHours(0,0,0,0);
+                dateEnd = new Date();
+            } else {
+                let [yyyy, mm, dd] = opsiTanggal.split('-');
+                // Set spesifik mulai 00:00:00 hingga 23:59:59 pada hari tersebut
+                dateStart = new Date(yyyy, mm - 1, dd, 0, 0, 0, 0);
+                dateEnd = new Date(yyyy, mm - 1, dd, 23, 59, 59, 999);
+            }
 
             try {
                 let q;
-                // Base Query: Transaksi 30 hari terakhir urut terbaru
                 const baseCol = collection(db, "transaksi");
-                const cond1 = where("waktu", ">=", batas30Hari);
-                const cond2 = orderBy("waktu", "desc");
+                const filterAwal = where("waktu", ">=", dateStart);
+                const filterAkhir = where("waktu", "<=", dateEnd);
+                const urutan = orderBy("waktu", "desc");
 
                 if (action === 'init') {
                     currentPage = 0;
                     pageCursors = [];
-                    q = query(baseCol, cond1, cond2, limit(itemPerPage));
+                    q = query(baseCol, filterAwal, filterAkhir, urutan, limit(itemPerPage));
                 } else if (action === 'next') {
                     const lastDoc = currentQuerySnapshot.docs[currentQuerySnapshot.docs.length - 1];
-                    q = query(baseCol, cond1, cond2, startAfter(lastDoc), limit(itemPerPage));
+                    q = query(baseCol, filterAwal, filterAkhir, urutan, startAfter(lastDoc), limit(itemPerPage));
                     currentPage++;
                 } else if (action === 'prev') {
                     currentPage--;
-                    q = query(baseCol, cond1, cond2, startAt(pageCursors[currentPage]), limit(itemPerPage));
+                    q = query(baseCol, filterAwal, filterAkhir, urutan, startAt(pageCursors[currentPage]), limit(itemPerPage));
                 }
 
-                // Ambil Data Sekali Saja (Bukan Real-time Snapshot) untuk hemat memori
                 const snapshot = await getDocs(q);
 
                 loading.classList.add('d-none');
                 listLaporan.style.opacity = '1';
 
-                // Validasi Data Kosong
                 if (snapshot.empty) {
                     if (action === 'init') {
-                        listLaporan.innerHTML = '<div class="text-center p-4 text-muted">Belum ada transaksi dalam 30 hari terakhir.</div>';
+                        listLaporan.innerHTML = '<div class="text-center p-4 text-muted">Belum ada transaksi pada tanggal yang dipilih.</div>';
                     } else if (action === 'next') {
-                        currentPage--; // Batalkan pindah halaman jika kosong
+                        currentPage--;
                         btnPrev.disabled = currentPage === 0;
                         btnNext.disabled = true;
                     }
@@ -547,13 +587,10 @@
                 }
 
                 currentQuerySnapshot = snapshot;
-                
-                // Simpan Dokumen Pertama untuk Caching Tombol Prev
                 if (action === 'init' || action === 'next') {
                     pageCursors[currentPage] = snapshot.docs[0];
                 }
 
-                // Render ke HTML Modal
                 let html = '';
                 snapshot.forEach((doc) => {
                     const data = doc.data();
@@ -582,14 +619,13 @@
                 listLaporan.innerHTML = html;
                 pageInfo.innerText = `Hal. ${currentPage + 1}`;
                 
-                // Atur Status Nyala/Mati Tombol Pagination
                 btnPrev.disabled = currentPage === 0;
-                btnNext.disabled = snapshot.docs.length < itemPerPage; // Matikan next jika data yang didapat < 10
+                btnNext.disabled = snapshot.docs.length < itemPerPage;
 
             } catch (error) {
                 console.error("Gagal memuat laporan:", error);
                 loading.classList.add('d-none');
-                listLaporan.innerHTML = '<div class="text-center p-4 text-danger">Gagal terhubung ke database.</div>';
+                listLaporan.innerHTML = '<div class="text-center p-4 text-danger">Gagal terhubung ke database. Cek koneksi Anda.</div>';
             }
         };
     </script>
