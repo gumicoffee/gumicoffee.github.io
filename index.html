@@ -106,10 +106,6 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        .btn-install-pwa:active {
-            transform: scale(0.95);
-        }
-
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -161,9 +157,24 @@
             padding: 5px 10px;
             border-radius: 8px;
         }
+
+        /* Modal Styles */
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+        }
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-purple));
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+        .btn-close-white {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
     </style>
 </head>
 <body>
+
     <div class="header-gradient p-3 pt-4 text-center fixed-top">
         <h4 class="fw-bold mb-0">Gumi Coffee</h4>
         <small class="opacity-75">Sistem Kasir Pintar</small>
@@ -243,31 +254,61 @@
 
         <div id="riwayat" class="page-section">
             <h5 class="fw-bold mb-3">Riwayat Hari Ini</h5>
-            <div class="card border-0 shadow-sm rounded-4" style="max-height: 300px; overflow-y: auto;">
+            <div class="card border-0 shadow-sm rounded-4 mb-3" style="max-height: 300px; overflow-y: auto;">
                 <div class="card-body p-0" id="list-riwayat">
                     <p class="text-center text-muted my-4">Memuat data transaksi...</p>
                 </div>
             </div>
+            
+            <button class="btn btn-outline-primary w-100 py-2 fw-bold rounded-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalLaporan" onclick="window.muatLaporan('init')">
+                <i class="fas fa-calendar-alt me-2"></i>Lihat Laporan 30 Hari Terakhir
+            </button>
         </div>
 
     </div>
 
+    <div class="modal fade" id="modalLaporan" tabindex="-1" aria-labelledby="modalLaporanLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content shadow">
+                <div class="modal-header border-0">
+                    <h1 class="modal-title fs-6 fw-bold" id="modalLaporanLabel"><i class="fas fa-history me-2"></i>Riwayat 30 Hari (Pagination)</h1>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body bg-light p-0">
+                    <div id="loading-laporan" class="text-center my-4 d-none">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="text-muted mt-2" style="font-size: 0.85rem;">Memuat data memori rendah...</p>
+                    </div>
+                    <div id="list-laporan" class="list-group list-group-flush">
+                        </div>
+                </div>
+                <div class="modal-footer bg-white border-0 d-flex justify-content-between align-items-center rounded-bottom-4">
+                    <small class="text-muted fw-bold" id="laporan-page-info">Hal. 1</small>
+                    <div>
+                        <button class="btn btn-outline-secondary btn-sm rounded-3 me-1" id="btn-laporan-prev" onclick="window.muatLaporan('prev')" disabled>
+                            <i class="fas fa-chevron-left"></i> Prev
+                        </button>
+                        <button class="btn btn-primary btn-sm rounded-3" style="background-color: var(--primary-purple); border-color: var(--primary-purple);" id="btn-laporan-next" onclick="window.muatLaporan('next')" disabled>
+                            Next <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="bottom-nav">
         <div class="nav-item active" id="nav-home" onclick="gulirKeSection('home')">
-            <i class="fas fa-home"></i>
-            <span>Home</span>
+            <i class="fas fa-home"></i><span>Home</span>
         </div>
         <div class="nav-item" id="nav-menu" onclick="gulirKeSection('menu')">
-            <i class="fas fa-th-large"></i>
-            <span>Menu</span>
+            <i class="fas fa-th-large"></i><span>Menu</span>
         </div>
         <div class="nav-item" id="nav-pesanan" onclick="gulirKeSection('pesanan')">
-            <i class="fas fa-clipboard-list"></i>
-            <span>Pesanan</span>
+            <i class="fas fa-clipboard-list"></i><span>Pesanan</span>
         </div>
         <div class="nav-item" id="nav-riwayat" onclick="gulirKeSection('riwayat')">
-            <i class="fas fa-history"></i>
-            <span>Riwayat</span>
+            <i class="fas fa-history"></i><span>Riwayat</span>
         </div>
     </div>
 
@@ -277,24 +318,19 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(registration => console.log('ServiceWorker sukses:', registration.scope))
-                    .catch(error => console.log('ServiceWorker gagal:', error));
+                navigator.serviceWorker.register('./sw.js').catch(error => console.log(error));
             });
         }
-    </script>
 
-    <script>
-        // Menggunakan window agar array ini bisa dibaca di dalam script bertipe module (Firebase)
         window.daftarMenu = [
             { id: "menu1", nama: "Es Kopi Aren", harga: 10000, ikon: "fas fa-mug-hot" },
-            { id: "menu2", nama: "Es Kopi Susu", harga: 10000, ikon: "fas fa-coffee" },
+            { id: "menu2", nama: "Es Kopi Coklat", harga: 10000, ikon: "fas fa-coffee" },
+            { id: "menu3", nama: "Vanilla Ice", harga: 10000, ikon: "fas fa-ice-cream" }
         ];
 
         function tampilkanMenuKeLayar() {
             const container = document.getElementById('container-menu');
             let html = '';
-            
             window.daftarMenu.forEach(menu => {
                 html += `
                 <div class="col-6 col-md-4">
@@ -310,43 +346,32 @@
             });
             container.innerHTML = html;
         }
-
         tampilkanMenuKeLayar();
-    </script>
 
-    <script>
+        // PWA Install Script
         let installPromptEvent = null;
         const tombolInstall = document.getElementById('btn-install');
-
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             installPromptEvent = e;
         });
-
-        if (window.matchMedia('(display-mode: standalone)').matches) {
-            tombolInstall.style.display = 'none';
-        }
-
+        if (window.matchMedia('(display-mode: standalone)').matches) tombolInstall.style.display = 'none';
         tombolInstall.addEventListener('click', async () => {
             if (!installPromptEvent) {
-                alert("Sistem mendeteksi instalasi otomatis belum tersedia.\n\n📱 Panduan Instalasi Manual:\n- Safari (iPhone/iPad): Ketuk ikon 'Share' (Bagikan) di bawah layar, lalu pilih 'Add to Home Screen' (Tambah ke Layar Utama).\n- Chrome (Android/PC): Ketuk menu titik tiga di pojok kanan atas, lalu pilih 'Install App' atau 'Add to Home Screen'.");
+                alert("Instalasi otomatis tidak tersedia. Silakan instal via menu browser 'Add to Home Screen'.");
                 return;
             }
             installPromptEvent.prompt();
-            const { outcome } = await installPromptEvent.userChoice;
-            console.log(`Pilihan user: ${outcome}`);
+            await installPromptEvent.userChoice;
             installPromptEvent = null;
         });
-
-        window.addEventListener('appinstalled', () => {
-            console.log('Aplikasi Gumi Coffee sukses diinstal.');
-            tombolInstall.style.display = 'none';
-        });
+        window.addEventListener('appinstalled', () => tombolInstall.style.display = 'none');
     </script>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        // Tambahan import `getDocs`, `limit`, `startAfter`, `startAt` untuk Pagination
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, where, getDocs, limit, startAfter, startAt } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAU2rZ8NoI4lHvMmDmJto9FXsNmbPkuCXs",
@@ -360,147 +385,74 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // 1. Setup Chart Penjualan (Pendapatan Garis Harian)
+        // -- Setup Chart (Tetap Sama) --
         const ctxPenjualan = document.getElementById('chartPenjualan').getContext('2d');
         const grafikPenjualan = new Chart(ctxPenjualan, {
             type: 'line',
             data: {
                 labels: ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00'],
-                datasets: [{
-                    label: 'Pendapatan (Rp)',
-                    data: [0, 0, 0, 0, 0, 0, 0, 0],
-                    borderColor: '#8b5cf6',
-                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.3
-                }]
+                datasets: [{ label: 'Pendapatan (Rp)', data: [0,0,0,0,0,0,0,0], borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.1)', borderWidth: 3, fill: true, tension: 0.3 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true } }
-            }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
         });
 
-        // 2. Setup Chart Menu (Produk Terjual per Item - Batang)
-        // Chart ini akan langsung mengambil daftar label dari objek window.daftarMenu
-        const labelMenuDinamis = window.daftarMenu.map(m => m.nama);
         const ctxMenu = document.getElementById('chartMenu').getContext('2d');
         const grafikMenu = new Chart(ctxMenu, {
             type: 'bar',
             data: {
-                labels: labelMenuDinamis,
-                datasets: [{
-                    label: 'Cup Terjual',
-                    data: window.daftarMenu.map(() => 0), // Set awal ke 0 semua
-                    backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                    borderColor: '#3b82f6',
-                    borderWidth: 1,
-                    borderRadius: 4
-                }]
+                labels: window.daftarMenu.map(m => m.nama),
+                datasets: [{ label: 'Cup Terjual', data: window.daftarMenu.map(() => 0), backgroundColor: 'rgba(59, 130, 246, 0.8)', borderColor: '#3b82f6', borderWidth: 1, borderRadius: 4 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { 
-                    y: { 
-                        beginAtZero: true, 
-                        ticks: { stepSize: 1 } // Agar jumlah cup tidak ada desimal koma
-                    } 
-                }
-            }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
         });
         
         window.simpanKeFirebase = async function(dataPesanan, total) {
             try {
-                await addDoc(collection(db, "transaksi"), {
-                    item: dataPesanan,
-                    total: total,
-                    waktu: new Date()
-                });
+                await addDoc(collection(db, "transaksi"), { item: dataPesanan, total: total, waktu: new Date() });
                 return true;
-            } catch (e) {
-                console.error("Error: ", e);
-                return false;
-            }
+            } catch (e) { console.error("Error: ", e); return false; }
         };
 
+        // -- Listener Hari Ini (Dashboard) --
         const awalHariIni = new Date(); awalHariIni.setHours(0, 0, 0, 0);
         const akhirHariIni = new Date(); akhirHariIni.setHours(23, 59, 59, 999);
+        const qHariIni = query(collection(db, "transaksi"), where("waktu", ">=", awalHariIni), where("waktu", "<=", akhirHariIni), orderBy("waktu", "desc"));
 
-        const q = query(
-            collection(db, "transaksi"), 
-            where("waktu", ">=", awalHariIni),
-            where("waktu", "<=", akhirHariIni),
-            orderBy("waktu", "desc")
-        );
-
-        // Real-time Update untuk semua komponen
-        onSnapshot(q, (querySnapshot) => {
+        onSnapshot(qHariIni, (querySnapshot) => {
             const listRiwayat = document.getElementById('list-riwayat');
             const teksPendapatan = document.getElementById('dashboard-pendapatan');
             const teksTransaksi = document.getElementById('dashboard-transaksi');
             
-            let totalPendapatanFirebase = 0;
-            let totalTransaksiFirebase = 0;
-            
-            // Variabel Penampung Data Garis (Pendapatan)
+            let totalPendapatanFirebase = 0; let totalTransaksiFirebase = 0;
             let dataJam = { '08': 0, '10': 0, '12': 0, '14': 0, '16': 0, '18': 0, '20': 0, '22': 0 };
-            
-            // Variabel Penampung Data Batang (Menu Terjual)
             let jumlahTerjualPerMenu = {};
-            // Inisialisasi setiap nama menu dengan 0
             window.daftarMenu.forEach(m => jumlahTerjualPerMenu[m.nama] = 0);
 
             if (querySnapshot.empty) {
                 listRiwayat.innerHTML = '<p class="text-center text-muted my-4">Belum ada transaksi hari ini.</p>';
-                teksPendapatan.innerText = 'Rp 0';
-                teksTransaksi.innerText = '0 Trx';
-                
-                // Reset Grafik
-                grafikPenjualan.data.datasets[0].data = [0, 0, 0, 0, 0, 0, 0, 0];
-                grafikPenjualan.update();
-                grafikMenu.data.datasets[0].data = window.daftarMenu.map(() => 0);
-                grafikMenu.update();
+                teksPendapatan.innerText = 'Rp 0'; teksTransaksi.innerText = '0 Trx';
+                grafikPenjualan.data.datasets[0].data = [0,0,0,0,0,0,0,0]; grafikPenjualan.update();
+                grafikMenu.data.datasets[0].data = window.daftarMenu.map(() => 0); grafikMenu.update();
                 return;
             }
 
             let html = '<div class="list-group list-group-flush">';
-            
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
-                totalPendapatanFirebase += data.total;
-                totalTransaksiFirebase += 1;
+                totalPendapatanFirebase += data.total; totalTransaksiFirebase += 1;
 
                 let waktuStr = "-";
                 if(data.waktu) {
                     const t = data.waktu.toDate ? data.waktu.toDate() : new Date(data.waktu);
                     waktuStr = t.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-                    
-                    // Hitung Penjualan per Jam
                     let jam = t.getHours();
-                    if (jam <= 9) dataJam['08'] += data.total;
-                    else if (jam <= 11) dataJam['10'] += data.total;
-                    else if (jam <= 13) dataJam['12'] += data.total;
-                    else if (jam <= 15) dataJam['14'] += data.total;
-                    else if (jam <= 17) dataJam['16'] += data.total;
-                    else if (jam <= 19) dataJam['18'] += data.total;
-                    else if (jam <= 21) dataJam['20'] += data.total;
-                    else dataJam['22'] += data.total;
+                    if (jam <= 9) dataJam['08'] += data.total; else if (jam <= 11) dataJam['10'] += data.total; else if (jam <= 13) dataJam['12'] += data.total; else if (jam <= 15) dataJam['14'] += data.total; else if (jam <= 17) dataJam['16'] += data.total; else if (jam <= 19) dataJam['18'] += data.total; else if (jam <= 21) dataJam['20'] += data.total; else dataJam['22'] += data.total;
                 }
 
-                // Hitung Jumlah Cup Terjual Berdasarkan Nama Menu
                 if (data.item && Array.isArray(data.item)) {
                     data.item.forEach(brg => {
-                        if (jumlahTerjualPerMenu[brg.nama] !== undefined) {
-                            jumlahTerjualPerMenu[brg.nama] += 1;
-                        } else {
-                            // Jaga-jaga jika ada transaksi menu lama yang sudah dihapus dari objek daftarMenu
-                            jumlahTerjualPerMenu[brg.nama] = 1;
-                        }
+                        if (jumlahTerjualPerMenu[brg.nama] !== undefined) jumlahTerjualPerMenu[brg.nama] += 1;
+                        else jumlahTerjualPerMenu[brg.nama] = 1;
                     });
                 }
 
@@ -509,7 +461,7 @@
                 <div class="list-group-item p-3 border-0 border-bottom">
                     <div class="d-flex justify-content-between align-items-center">
                         <div style="max-width: 70%;">
-                            <h6 class="fw-bold mb-1 text-dark" style="font-size: 0.9rem;">ID: ${doc.id.substring(0, 6).toUpperCase()}...</h6>
+                            <h6 class="fw-bold mb-1 text-dark" style="font-size: 0.9rem;">ID: ${doc.id.substring(0, 6).toUpperCase()}</h6>
                             <small class="text-muted d-block text-truncate">${ringkasanItem}</small>
                         </div>
                         <div class="text-end">
@@ -521,23 +473,126 @@
             });
             html += '</div>';
             
-            // Update UI Teks
             listRiwayat.innerHTML = html;
             teksPendapatan.innerText = 'Rp ' + totalPendapatanFirebase.toLocaleString('id-ID');
             teksTransaksi.innerText = totalTransaksiFirebase + ' Trx';
 
-            // Update Grafik 1 (Pendapatan Garis)
-            grafikPenjualan.data.datasets[0].data = [
-                dataJam['08'], dataJam['10'], dataJam['12'], dataJam['14'], 
-                dataJam['16'], dataJam['18'], dataJam['20'], dataJam['22']
-            ];
+            grafikPenjualan.data.datasets[0].data = [dataJam['08'], dataJam['10'], dataJam['12'], dataJam['14'], dataJam['16'], dataJam['18'], dataJam['20'], dataJam['22']];
             grafikPenjualan.update();
-
-            // Update Grafik 2 (Menu Terjual Batang Dinamis)
             grafikMenu.data.labels = Object.keys(jumlahTerjualPerMenu);
             grafikMenu.data.datasets[0].data = Object.values(jumlahTerjualPerMenu);
             grafikMenu.update();
         });
+
+        // --- FITUR BARU: LOGIKA PAGINATION LAPORAN 30 HARI ---
+        let currentPage = 0;
+        let pageCursors = []; // Menyimpan dokumen pertama dari setiap halaman
+        let currentQuerySnapshot = null;
+        const itemPerPage = 10; // Jumlah item per halaman memori ringan
+
+        window.muatLaporan = async function(action) {
+            const listLaporan = document.getElementById('list-laporan');
+            const loading = document.getElementById('loading-laporan');
+            const btnPrev = document.getElementById('btn-laporan-prev');
+            const btnNext = document.getElementById('btn-laporan-next');
+            const pageInfo = document.getElementById('laporan-page-info');
+
+            // Set visual loading state
+            loading.classList.remove('d-none');
+            btnPrev.disabled = true;
+            btnNext.disabled = true;
+            if(action === 'init') { listLaporan.innerHTML = ''; } 
+            else { listLaporan.style.opacity = '0.5'; }
+
+            // Set Batas Tarik Data (30 Hari Terakhir)
+            const batas30Hari = new Date();
+            batas30Hari.setDate(batas30Hari.getDate() - 30);
+            batas30Hari.setHours(0,0,0,0);
+
+            try {
+                let q;
+                // Base Query: Transaksi 30 hari terakhir urut terbaru
+                const baseCol = collection(db, "transaksi");
+                const cond1 = where("waktu", ">=", batas30Hari);
+                const cond2 = orderBy("waktu", "desc");
+
+                if (action === 'init') {
+                    currentPage = 0;
+                    pageCursors = [];
+                    q = query(baseCol, cond1, cond2, limit(itemPerPage));
+                } else if (action === 'next') {
+                    const lastDoc = currentQuerySnapshot.docs[currentQuerySnapshot.docs.length - 1];
+                    q = query(baseCol, cond1, cond2, startAfter(lastDoc), limit(itemPerPage));
+                    currentPage++;
+                } else if (action === 'prev') {
+                    currentPage--;
+                    q = query(baseCol, cond1, cond2, startAt(pageCursors[currentPage]), limit(itemPerPage));
+                }
+
+                // Ambil Data Sekali Saja (Bukan Real-time Snapshot) untuk hemat memori
+                const snapshot = await getDocs(q);
+
+                loading.classList.add('d-none');
+                listLaporan.style.opacity = '1';
+
+                // Validasi Data Kosong
+                if (snapshot.empty) {
+                    if (action === 'init') {
+                        listLaporan.innerHTML = '<div class="text-center p-4 text-muted">Belum ada transaksi dalam 30 hari terakhir.</div>';
+                    } else if (action === 'next') {
+                        currentPage--; // Batalkan pindah halaman jika kosong
+                        btnPrev.disabled = currentPage === 0;
+                        btnNext.disabled = true;
+                    }
+                    return;
+                }
+
+                currentQuerySnapshot = snapshot;
+                
+                // Simpan Dokumen Pertama untuk Caching Tombol Prev
+                if (action === 'init' || action === 'next') {
+                    pageCursors[currentPage] = snapshot.docs[0];
+                }
+
+                // Render ke HTML Modal
+                let html = '';
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    let waktuStr = "-";
+                    if(data.waktu) {
+                        const t = data.waktu.toDate ? data.waktu.toDate() : new Date(data.waktu);
+                        waktuStr = t.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) + ' - ' + t.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                    }
+                    const ringkasanItem = data.item.map(i => i.nama).join(', ');
+
+                    html += `
+                    <div class="list-group-item p-3 border-bottom bg-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div style="max-width: 65%;">
+                                <h6 class="fw-bold mb-1 text-dark" style="font-size: 0.85rem;">ID: ${doc.id.substring(0, 6).toUpperCase()}</h6>
+                                <small class="text-muted d-block text-truncate" style="font-size: 0.75rem;">${ringkasanItem}</small>
+                                <small class="text-primary fw-semibold" style="font-size: 0.7rem;">${waktuStr}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge-harga d-block mb-1" style="font-size: 0.85rem;">Rp ${data.total.toLocaleString('id-ID')}</span>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                
+                listLaporan.innerHTML = html;
+                pageInfo.innerText = `Hal. ${currentPage + 1}`;
+                
+                // Atur Status Nyala/Mati Tombol Pagination
+                btnPrev.disabled = currentPage === 0;
+                btnNext.disabled = snapshot.docs.length < itemPerPage; // Matikan next jika data yang didapat < 10
+
+            } catch (error) {
+                console.error("Gagal memuat laporan:", error);
+                loading.classList.add('d-none');
+                listLaporan.innerHTML = '<div class="text-center p-4 text-danger">Gagal terhubung ke database.</div>';
+            }
+        };
     </script>
 
     <script>
